@@ -78,6 +78,8 @@ extern hrtime_t __gethrtime(void);
 #define clock_gettime(fl, tp)		__clock_gettime(fl, tp)
 #define gethrtime()			__gethrtime()
 
+#define	gethrtime_unscaled()		__gethrtime()
+
 static __inline__ time_t
 gethrestime_sec(void)
 {
