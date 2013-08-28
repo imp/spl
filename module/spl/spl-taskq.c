@@ -781,6 +781,7 @@ taskq_t *
 taskq_create(const char *name, int nthreads, pri_t pri,
     int minalloc, int maxalloc, uint_t flags)
 {
+	static int last_used_cpu = 0;
 	taskq_t *tq;
 	taskq_thread_t *tqt;
 	int rc = 0, i, j = 0;
@@ -843,6 +844,8 @@ taskq_create(const char *name, int nthreads, pri_t pri,
 		    "%s/%d", name, i);
 		if (tqt->tqt_thread) {
 			list_add(&tqt->tqt_thread_list, &tq->tq_thread_list);
+			last_used_cpu = (last_used_cpu + 1) % num_online_cpus();
+			kthread_bind(tqt->tqt_thread, last_used_cpu);
 			set_user_nice(tqt->tqt_thread, PRIO_TO_NICE(pri));
 			wake_up_process(tqt->tqt_thread);
 			j++;
