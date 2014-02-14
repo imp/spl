@@ -55,6 +55,31 @@ kstat_resize_raw(kstat_t *ksp)
 }
 
 void
+kstat_timer_start(kstat_timer_t *ktp)
+{
+	ktp->start_time = gethrtime();
+}
+EXPORT_SYMBOL(kstat_timer_start);
+
+void
+kstat_timer_stop(kstat_timer_t *ktp)
+{
+	hrtime_t        etime;
+	u_longlong_t    num_events;
+
+	ktp->stop_time = etime = gethrtime();
+	etime -= ktp->start_time;
+	num_events = ktp->num_events;
+	if (etime < ktp->min_time || num_events == 0)
+		ktp->min_time = etime;
+	if (etime > ktp->max_time)
+		ktp->max_time = etime;
+	ktp->elapsed_time += etime;
+	ktp->num_events = num_events + 1;
+}
+EXPORT_SYMBOL(kstat_timer_stop);
+
+void
 kstat_waitq_enter(kstat_io_t *kiop)
 {
 	hrtime_t new, delta;
@@ -168,7 +193,7 @@ restart:
                 case KSTAT_TYPE_TIMER:
                         seq_printf(f,
                                    "%-31s %-8s "
-                                   "%-8s %-8s %-8s %-8s %-8s\n",
+                                   "%-16s %-16s %-16s %-16s %-16s\n",
                                    "name", "events", "elapsed",
                                    "min", "max", "start", "stop");
                         break;
@@ -278,7 +303,7 @@ static int
 kstat_seq_show_timer(struct seq_file *f, kstat_timer_t *ktp)
 {
         seq_printf(f,
-                   "%-31s %-8llu %-8lld %-8lld %-8lld %-8lld %-8lld\n",
+                   "%-31s %-8llu %-16lld %-16lld %-16lld %-16lld %-16lld\n",
                    ktp->name, ktp->num_events, ktp->elapsed_time,
                    ktp->min_time, ktp->max_time,
                    ktp->start_time, ktp->stop_time);
